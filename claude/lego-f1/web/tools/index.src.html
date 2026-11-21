@@ -310,12 +310,13 @@ wheel('wheelRR', -11.05, -5.4, WHEEL_R, 2.2, 'wheel_r');
 
 // ---------- сборка 3D-объектов ----------
 const car = new THREE.Group();
+car.name = 'car';
 scene.add(car);
 const pickables = [];
 for (const name in PARTS) {
   const P = PARTS[name];
-  P.group = new THREE.Group();
-  P.spin = new THREE.Group(); // колёса крутятся внутри этой группы
+  P.group = new THREE.Group(); P.group.name = 'part_' + name;
+  P.spin = new THREE.Group(); P.spin.name = 'spin_' + name; // колёса крутятся внутри этой группы
   P.group.add(P.spin);
   car.add(P.group);
   const d = new THREE.Vector3().fromArray(P.dir).normalize();
@@ -343,6 +344,8 @@ blocks.forEach((b) => {
   if (b.geo) { geo = b.geo; home = new THREE.Vector3(b.x, b.y, b.z); }
   else { geo = blockGeo(b); home = new THREE.Vector3((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, (b.z0 + b.z1) / 2); }
   const m = new THREE.Mesh(geo, blockMaterial(b));
+  m.name = 'blk_' + blocks.indexOf(b) + '_' + b.part; // имена нужны для выгрузки в Blender
+  m.userData.kind = b.decalMesh ? 'decal' : (b.part.startsWith('wheel') && b.layer === 0 ? 'tyre' : 'plastic');
   if (b.rot) m.rotation.set(b.rot[0], b.rot[1], b.rot[2]);
   m.castShadow = true; m.receiveShadow = true;
   m.userData.home = home;
@@ -394,6 +397,7 @@ function pathAt(s, outPos, outDir) {
   g.computeVertexNormals();
   const road = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0x3c3f44, roughness: 0.92, side: THREE.DoubleSide }));
   road.receiveShadow = true;
+  road.name = 'road';
   scene.add(road);
 
   // Бордюры: красно-белые кубики по обеим кромкам на поворотах, белая линия на прямых.
@@ -419,6 +423,7 @@ function pathAt(s, outPos, outDir) {
     }
   });
   kerbs.count = k;
+  kerbs.name = 'kerbs';
   scene.add(kerbs);
   const lineMat = new THREE.MeshStandardMaterial({ color: 0xd9d9d9, roughness: 0.7 });
   [[0, 0], [0, -2 * R]].forEach(([cx, cz]) => {
@@ -427,6 +432,7 @@ function pathAt(s, outPos, outDir) {
       ln.rotation.x = -Math.PI / 2;
       ln.position.set(cx, 0.035, cz + side * (TRACK_W / 2 - 0.5));
       ln.receiveShadow = true;
+      ln.name = 'line';
       scene.add(ln);
     });
   });
@@ -434,6 +440,7 @@ function pathAt(s, outPos, outDir) {
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshStandardMaterial({ color: 0x14161a, roughness: 0.96 }));
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
+ground.name = 'ground';
 scene.add(ground);
 
 // ---------- коробка набора ----------
@@ -460,12 +467,13 @@ const box = new THREE.Group();
   box.add(mesh);
   box.position.copy(BOX_POS);
   box.userData.mesh = mesh;
+  box.name = 'box'; mesh.name = 'box_mesh';
   scene.add(box);
 }
 
 // ---------- таймлайн ----------
 // Важные моменты (секунды)
-const T = { autoExplode: 7, flyOut: 1.2, assemble: 11, assembled: 12, driveEnd: 14.8, boxIn: 11, end: 15 };
+const T = { autoExplode: 7, flyOut: 1.2, assemble: 11, assembled: 12, driveEnd: 14.8, heroFrom: 14.2, boxIn: 11, end: 15 };
 const SWAY = 35 * Math.PI / 180, SWAY_PERIOD = 7;
 const state = { tapAt: null }; // время тапа по машинке (запуск разбора раньше 7-й секунды)
 const explodeStart = () => (state.tapAt !== null ? state.tapAt : T.autoExplode);
@@ -536,20 +544,18 @@ function followPose(t, outPos, outTarget) {
   outTarget.copy(tmpP).add(new THREE.Vector3(0, 2, 0));
 }
 const camA = new THREE.Vector3(), camAT = new THREE.Vector3(), camB = new THREE.Vector3(), camBT = new THREE.Vector3();
-// Поза камеры на секунде t. До 12-й секунды — только мышь/пальцы; 12–14.8 — за машинкой; дальше — общий план «машинка + коробка».
+// Поза камеры на секунде t. До 12-й секунды — только мышь/пальцы; 12–14.2 — за машинкой; 14.2–15 — плавный переход на общий план «машинка + коробка».
 function cameraAt(t) {
   const camT = new THREE.Vector3();
   if (t < T.assembled) {
     orbitPose(camera.position, camT);
-  } else if (t < T.driveEnd) {
-    followPose(t, camB, camBT);
-    const k = smooth((t - T.assembled) / 0.6);
-    if (k < 1) { orbitPose(camA, camAT); camera.position.lerpVectors(camA, camB, k); camT.lerpVectors(camAT, camBT, k); }
-    else { camera.position.copy(camB); camT.copy(camBT); }
   } else if (t < T.end || !endOrbitSet) {
-    followPose(T.driveEnd - 0.001, camA, camAT);
-    const k = easeInOut((t - T.driveEnd) / (T.end - T.driveEnd));
-    camera.position.lerpVectors(camA, HERO.pos, k); camT.lerpVectors(camAT, HERO.target, k);
+    // за машинкой; с T.heroFrom камера плавно уходит на общий план и останавливается ровно к 15-й секунде
+    followPose(Math.min(t, T.driveEnd - 0.001), camB, camBT);
+    const k = smooth((t - T.assembled) / 0.6);
+    if (k < 1) { orbitPose(camA, camAT); camB.lerp(camA, 1 - k); camBT.lerp(camAT, 1 - k); }
+    const h = easeInOut((t - T.heroFrom) / (T.end - T.heroFrom));
+    camera.position.lerpVectors(camB, HERO.pos, h); camT.lerpVectors(camBT, HERO.target, h);
   } else {
     orbitPose(camera.position, camT);
   }
@@ -625,6 +631,17 @@ if (VIDEO) {
       return quality ? renderer.domElement.toDataURL('image/jpeg', quality) : renderer.domElement.toDataURL('image/png'); // без параметра — PNG без потерь
     },
     ready: () => !!window.__texReady,
+    // Для выгрузки в Blender (tools/export_gltf.mjs): поставить сцену на секунду t без рисования.
+    pose: (t) => {
+      state.tapAt = null;
+      orbitFrom(HOME.pos, HOME.target);
+      endOrbitSet = false;
+      poseAt(t);
+      scene.updateMatrixWorld(true);
+      camera.updateMatrixWorld(true);
+      return { boxOpacity: box.visible ? boxMats[0].opacity : 0 };
+    },
+    scene, camera, key, KEY_OFFSET,
   };
   resize(1920, 1080);
 } else {
