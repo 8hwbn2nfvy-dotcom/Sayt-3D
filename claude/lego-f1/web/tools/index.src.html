@@ -79,7 +79,7 @@ const camera = new THREE.PerspectiveCamera(38, 16 / 9, 0.5, 600);
 const KEY_OFFSET = new THREE.Vector3(-22, 42, 26);
 const key = new THREE.DirectionalLight(0xfff4e8, 3.0);
 key.castShadow = true;
-key.shadow.mapSize.set(VIDEO ? 4096 : 2048, VIDEO ? 4096 : 2048);
+key.shadow.mapSize.set(4096, 4096);
 key.shadow.camera.left = -42; key.shadow.camera.right = 42;
 key.shadow.camera.top = 42; key.shadow.camera.bottom = -42;
 key.shadow.camera.near = 1; key.shadow.camera.far = 160;
@@ -394,7 +394,9 @@ const box = new THREE.Group();
 {
   const tex = new THREE.TextureLoader().load(BOX_TEXTURE, () => { window.__texReady = true; if (window.requestRender) window.requestRender(); });
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy(); // максимальная чёткость под углом
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.generateMipmaps = true;
   const side = { color: 0x24272d, roughness: 0.55, transparent: true, opacity: 0 };
   // порядок граней BoxGeometry: +x, -x, +y, -y, +z (лицо к зрителю), -z
   for (let i = 0; i < 6; i++) {
@@ -570,7 +572,7 @@ if (VIDEO) {
       endOrbitSet = false;
       poseAt(t);
       renderer.render(scene, camera);
-      return renderer.domElement.toDataURL('image/jpeg', quality || 0.94);
+      return quality ? renderer.domElement.toDataURL('image/jpeg', quality) : renderer.domElement.toDataURL('image/png'); // без параметра — PNG без потерь
     },
     ready: () => !!window.__texReady,
   };
