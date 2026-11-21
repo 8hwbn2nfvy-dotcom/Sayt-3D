@@ -4,6 +4,7 @@
 // <script type="module"> с file://. Обычный <script src> работает.
 // Запуск: node tools/build_three.mjs <папка build из репозитория three.js>
 import { readFileSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -52,5 +53,13 @@ Object.keys(__mod).forEach(function (k) { THREE[k] = __mod[k]; });
 window.THREE = Object.freeze(THREE);
 })();
 `;
-writeFileSync(out, result);
-console.log('three.js:', (result.length / 1024 / 1024).toFixed(2), 'MB,', modReexports.length + modOwn.length, 'имён');
+// Ужимаем: TypeScript (если установлен) убирает комментарии разбором кода, затем снимаем отступы и пустые строки.
+// Переводы строк остаются, поэтому смысл кода не меняется.
+let final = result;
+try {
+	const ts = createRequire(import.meta.url)('typescript');
+	const body = ts.transpileModule(result, { compilerOptions: { removeComments: true, target: ts.ScriptTarget.ESNext, module: ts.ModuleKind.None } }).outputText;
+	final = licence + '\n' + body.split('\n').map((l) => l.replace(/^\s+/, '')).filter((l) => l.length).join('\n') + '\n';
+} catch (e) { console.warn('typescript не найден — three.js без ужатия:', e.message); }
+writeFileSync(out, final);
+console.log('three.js:', (final.length / 1024 / 1024).toFixed(2), 'MB,', modReexports.length + modOwn.length, 'имён');
