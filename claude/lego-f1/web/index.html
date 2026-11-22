@@ -639,7 +639,8 @@ if (VIDEO) {
       poseAt(t);
       scene.updateMatrixWorld(true);
       camera.updateMatrixWorld(true);
-      return { boxOpacity: box.visible ? boxMats[0].opacity : 0 };
+      // для замены машины в Blender (claude/real-f1): разобранность, угол колёс, положение и поворот машины
+      return { boxOpacity: box.visible ? boxMats[0].opacity : 0, explode: explodeAmount(t), wheel: wheelAngle(t), car: [car.position.x, car.position.y, car.position.z, car.rotation.y] };
     },
     scene, camera, key, KEY_OFFSET,
   };

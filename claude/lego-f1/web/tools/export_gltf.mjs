@@ -68,12 +68,13 @@ const result = await page.evaluate(async () => {
   nodes.push(camera);
   const FPS = 30, N = 450;
   const rec = nodes.map(() => ({ p: [], q: [], s: [] }));
-  const alpha = [];
+  const alpha = [], explode = [], wheel = [], carPose = [];
   const times = [];
   for (let f = 0; f < N; f++) {
     const t = f / FPS;
     times.push(t);
-    alpha.push(L.pose(t).boxOpacity);
+    const ps = L.pose(t);
+    alpha.push(ps.boxOpacity); explode.push(ps.explode); wheel.push(ps.wheel); carPose.push(ps.car);
     nodes.forEach((o, i) => {
       rec[i].p.push(o.position.x, o.position.y, o.position.z);
       rec[i].q.push(o.quaternion.x, o.quaternion.y, o.quaternion.z, o.quaternion.w);
@@ -96,7 +97,7 @@ const result = await page.evaluate(async () => {
   let bin = '';
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
   return {
-    glb: btoa(bin), alpha, tracks: tracks.length, nodes: nodes.length,
+    glb: btoa(bin), alpha, explode, wheel, carPose, tracks: tracks.length, nodes: nodes.length,
     camera: { fov: camera.fov, aspect: camera.aspect, near: camera.near, far: camera.far },
     keyOffset: L.KEY_OFFSET.toArray(),
   };
@@ -104,5 +105,6 @@ const result = await page.evaluate(async () => {
 await browser.close();
 if (errors.length) { console.error('Ошибки страницы:\n' + errors.join('\n')); process.exit(1); }
 writeFileSync(join(outDir, 'scene.glb'), Buffer.from(result.glb, 'base64'));
-writeFileSync(join(outDir, 'timeline.json'), JSON.stringify({ fps: 30, frames: result.alpha.length, boxAlpha: result.alpha, camera: result.camera, keyOffset: result.keyOffset }));
+// explode/wheel/carPose — для замены Лего-машинки другой моделью (claude/real-f1/tools/real_car.py); carPose = [x, y, z, поворот] в координатах страницы
+writeFileSync(join(outDir, 'timeline.json'), JSON.stringify({ fps: 30, frames: result.alpha.length, boxAlpha: result.alpha, explode: result.explode, wheel: result.wheel, carPose: result.carPose, camera: result.camera, keyOffset: result.keyOffset }));
 console.log(`scene.glb ${(result.glb.length * 0.75 / 1024 / 1024).toFixed(1)} МБ, узлов с движением: ${result.nodes}, дорожек анимации: ${result.tracks}`);

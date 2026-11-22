@@ -27,6 +27,9 @@ ap.add_argument('--frames', default='')          # «0,270,390» — тольк�
 ap.add_argument('--samples', type=int, default=32)
 ap.add_argument('--scale', type=int, default=100)  # % от 1920×1080
 ap.add_argument('--video', default='')            # куда собрать mp4 после полного рендера
+ap.add_argument('--car-module', default='')       # путь к модулю с install(sc, tl, frame0): заменить Лего-машинку другой моделью
+ap.add_argument('--frames-dir', default='frames')  # папка кадров внутри build
+ap.add_argument('--key-follow', action='store_true')  # во время езды софтбокс светит со стороны камеры
 args = ap.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:])
 
 build = os.path.abspath(args.build)
@@ -60,6 +63,12 @@ sc.frame_end = round(k0) + N - 1
 for fc in all_fcurves():
     for kp in fc.keyframe_points:
         kp.interpolation = 'LINEAR'
+
+# --- другая машина вместо Лего (claude/real-f1/tools/real_car.py) ---
+if args.car_module:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(args.car_module)))
+    import importlib
+    importlib.import_module(os.path.splitext(os.path.basename(args.car_module))[0]).install(sc, tl, sc.frame_start)
 
 # --- камера ---
 cam = next(o for o in sc.objects if o.type == 'CAMERA')
@@ -175,6 +184,27 @@ d = [center[i] - light.location[i] for i in range(3)]
 light.rotation_euler = (0, 0, 0)
 light.rotation_euler = mathutils.Vector(d).to_track_quat('-Z', 'Y').to_euler()
 
+# --- софтбокс во время езды (12–15 с): плавно уходит к камере и светит на машину спереди-сбоку от зрителя ---
+if args.key_follow:
+    base_loc, base_aim = light.location.copy(), mathutils.Vector(center)
+    root = bpy.data.objects.get('car_root') or bpy.data.objects.get('car')
+    locs, rots = [], []
+    smooth = lambda x: (lambda c: c * c * (3 - 2 * c))(min(1, max(0, x)))
+    for i in range(N):
+        t = i / FPS
+        k = smooth((t - 12) / 0.6) * (1 - smooth((t - 14.2) / 0.8))
+        sc.frame_set(sc.frame_start + i)
+        cam_p = cam.matrix_world.translation
+        car_p = root.matrix_world.translation if root else base_aim
+        loc = base_loc.lerp(cam_p + mathutils.Vector((0, 0, 22)), k)
+        aim = base_aim.lerp(car_p + mathutils.Vector((0, 0, 2)), k)
+        locs.append(loc.copy())
+        rots.append((aim - loc).to_track_quat('-Z', 'Y').to_euler())
+    for i in range(N):
+        light.location = locs[i]; light.rotation_euler = rots[i]
+        light.keyframe_insert('location', frame=sc.frame_start + i)
+        light.keyframe_insert('rotation_euler', frame=sc.frame_start + i)
+
 # --- мир: почти чёрный фон, чуть заметный отсвет для отражений ---
 world = bpy.data.worlds.new('studio')
 sc.world = world
@@ -205,7 +235,7 @@ sc.view_settings.view_transform = 'AgX'
 sc.view_settings.look = 'AgX - Medium High Contrast'
 r.use_persistent_data = True
 
-out = os.path.join(build, 'frames')
+out = os.path.join(build, args.frames_dir)
 os.makedirs(out, exist_ok=True)
 frames = [int(x) for x in args.frames.split(',')] if args.frames else list(range(N))
 t0 = time.time()
