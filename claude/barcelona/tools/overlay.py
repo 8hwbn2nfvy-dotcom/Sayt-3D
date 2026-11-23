@@ -1,4 +1,4 @@
-"""Табло времени круга и секторов поверх кадров и сборка web/video.mp4.
+"""Табло времени круга и секторов поверх кадров и сборка web/video.mp4 со звуком (build/audio/mix.wav).
 
 Табло появляется, когда гаснут огни: бегущее время круга, S1/S2/S3 заполняются при прохождении границ секторов,
 на финише — итог круга. Времена — из build/timeline.json (их считает track_build.py → bcn_scene.py).
@@ -75,8 +75,15 @@ if args.preview >= 0:
 else:
     out = os.path.join(ROOT, 'web', 'video.mp4')
     os.makedirs(os.path.dirname(out), exist_ok=True)
+    # звук (tools/audio.py → build/audio/mix.wav), громкость −14 LUFS
+    wav = os.path.join(ROOT, 'build', 'audio', 'mix.wav')
+    audio_in = ['-i', wav] if os.path.exists(wav) else []
+    audio_out = ['-map', '0:v', '-map', '1:a', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000'] if audio_in else []
+    if not audio_in:
+        print('нет build/audio/mix.wav — видео без звука (запусти tools/audio.py)')
     ff = subprocess.Popen(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W}x{H}', '-r', str(FPS), '-i', '-',
-                           '-c:v', 'libx264', '-preset', 'slow', '-crf', '16', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', out], stdin=subprocess.PIPE)
+                           *audio_in, *audio_out,
+                           '-c:v', 'libx264', '-preset', 'slow', '-crf', '16', '-pix_fmt', 'yuv420p', '-shortest', '-movflags', '+faststart', out], stdin=subprocess.PIPE)
     for f in range(N):
         im = draw(Image.open(os.path.join(frames, f'{f:04d}.png')).convert('RGB'), f / FPS)
         ff.stdin.write(im.tobytes())

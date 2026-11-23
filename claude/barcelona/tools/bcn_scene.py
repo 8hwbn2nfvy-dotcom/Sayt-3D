@@ -29,7 +29,7 @@ import car_setup  # noqa: E402
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--frames', default='')
-ap.add_argument('--samples', type=int, default=14)
+ap.add_argument('--samples', type=int, default=12)
 ap.add_argument('--scale', type=int, default=100)
 ap.add_argument('--save-blend', default='')
 args = ap.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:])
@@ -43,6 +43,8 @@ ROAD_W = 12.5                              # ширина трассы, м
 KERB_W = 1.4
 CAR_BACK = 2.9                             # центр машины позади линии старта (нос ≈ на линии)
 CAR_SCALE = 5.61 / 28.0                    # разлёт частей задан для Лего-масштаба (28 единиц) → метры
+HDRI_ROT = 0.0
+COAT = 0.5                                 # лак краски                             # поворот панорамы неба вокруг вертикали, градусы
 
 T = np.load(os.path.join(ROOT, 'build', 'track.npz'))
 P2, Z, KAPPA, TCUM, DS, L = T['pts'], T['z'], T['kappa'], T['tcum'], float(T['ds']), float(T['L'])
@@ -55,15 +57,51 @@ json.dump(INFO, open(os.path.join(ROOT, 'build', 'timeline.json'), 'w'))
 
 
 # ---------- путь ----------
+def smooth_closed(a, sigma):
+    """Гауссово сглаживание по кругу (БПФ), sigma — в точках трассы."""
+    k = np.fft.fftfreq(len(a)); f = np.exp(-2 * (math.pi * k * sigma) ** 2)
+    if a.ndim == 1:
+        return np.real(np.fft.ifft(np.fft.fft(a) * f))
+    return np.stack([np.real(np.fft.ifft(np.fft.fft(a[:, i]) * f)) for i in range(a.shape[1])], axis=1)
+
+
+# Направление трассы: центральная разность, сглаженная (σ = 6 м), затем курс и уклон как плавные функции пути.
+# Раньше направление бралось по ближайшей точке без интерполяции — на поворотах машина дёргалась ступеньками.
+_TAN = smooth_closed((np.roll(P3, -1, 0) - np.roll(P3, 1, 0)) / (2 * DS), 6)
+HEAD = np.unwrap(np.arctan2(_TAN[:, 1], _TAN[:, 0]))
+SLOPE = np.arctan2(_TAN[:, 2], np.hypot(_TAN[:, 0], _TAN[:, 1]))
+HEAD_TURN = HEAD[-1] + (HEAD[1] - HEAD[0]) - HEAD[0]          # полный оборот курса за круг (±2π)
+
+
+def frame_at(s):
+    """Плавные курс (рад, без скачков между кругами) и уклон дороги на расстоянии s."""
+    f = s / DS
+    lap = math.floor(f / NPT); f -= lap * NPT
+    i = int(f); a = f - i; j = (i + 1) % NPT
+    hj = HEAD[j] + (HEAD_TURN if j == 0 else 0.0)
+    return HEAD[i] * (1 - a) + hj * a + lap * HEAD_TURN, SLOPE[i] * (1 - a) + SLOPE[j] * a
+
+
 def at(s):
     """Точка, направление (единичное, 3D), нормаль влево (2D) и кривизна на расстоянии s по трассе (по кругу)."""
     f = (s / DS) % NPT
     i = int(f); a = f - i; j = (i + 1) % NPT
     p = P3[i] * (1 - a) + P3[j] * a
-    d = P3[(i + 2) % NPT] - P3[(i - 2) % NPT]
-    d /= np.linalg.norm(d)
-    left = np.array([-d[1], d[0], 0.0]); left /= np.linalg.norm(left)
+    h, sl = frame_at(s)
+    d = np.array([math.cos(h) * math.cos(sl), math.sin(h) * math.cos(sl), math.sin(sl)])
+    left = np.array([-math.sin(h), math.cos(h), 0.0])
     return p, d, left, KAPPA[i] * (1 - a) + KAPPA[j] * a
+
+
+def smooth_time(a, sigma):
+    """Сглаживание по кадрам без запаздывания (гаусс, края — повтор крайних значений)."""
+    a = np.asarray(a, float)
+    r = int(3 * sigma) + 1
+    k = np.exp(-0.5 * (np.arange(-r, r + 1) / sigma) ** 2); k /= k.sum()
+    pad = np.concatenate([np.repeat(a[:1], r, 0), a, np.repeat(a[-1:], r, 0)])
+    if a.ndim == 1:
+        return np.convolve(pad, k, 'valid')
+    return np.stack([np.convolve(pad[:, i], k, 'valid') for i in range(a.shape[1])], axis=1)
 
 
 def dist_at(t):
@@ -173,12 +211,23 @@ nt.links.new(tc.outputs['Object'], grain.inputs['Vector'])
 fine = nt.nodes.new('ShaderNodeTexNoise'); fine.inputs['Scale'].default_value = 260; fine.inputs['Detail'].default_value = 3
 nt.links.new(tc.outputs['Object'], fine.inputs['Vector'])
 ramp = nt.nodes.new('ShaderNodeValToRGB')
-ramp.color_ramp.elements[0].color = (0.012, 0.0125, 0.014, 1); ramp.color_ramp.elements[1].color = (0.045, 0.045, 0.047, 1)
+ramp.color_ramp.elements[0].color = (0.40, 0.40, 0.42, 1); ramp.color_ramp.elements[1].color = (0.75, 0.75, 0.76, 1)
 mix_n = nt.nodes.new('ShaderNodeMath'); mix_n.operation = 'MULTIPLY_ADD'
 nt.links.new(big.outputs['Fac'], mix_n.inputs[0]); mix_n.inputs[1].default_value = 0.9; mix_n.inputs[2].default_value = 0.0
 add2 = nt.nodes.new('ShaderNodeMath'); add2.operation = 'MULTIPLY_ADD'
 nt.links.new(fine.outputs['Fac'], add2.inputs[0]); add2.inputs[1].default_value = 0.4; nt.links.new(mix_n.outputs[0], add2.inputs[2])
 nt.links.new(add2.outputs[0], ramp.inputs['Fac'])
+# фототекстура асфальта (Poly Haven asphalt_02, плитка 3 м) поверх процедурной основы
+amap = nt.nodes.new('ShaderNodeMapping'); amap.inputs['Scale'].default_value = (1 / 3, 1 / 3, 1 / 3)
+nt.links.new(tc.outputs['Object'], amap.inputs['Vector'])
+atex = {}
+for key, colr in (('diff', True), ('nor', False), ('rough', False)):
+    tn = nt.nodes.new('ShaderNodeTexImage')
+    tdir = os.path.join(ROOT, 'assets', 'tex', 'asphalt_02')
+    tn.image = bpy.data.images.load(os.path.join(tdir, next(x for x in os.listdir(tdir) if f'_{key}_' in x)))
+    if not colr:
+        tn.image.colorspace_settings.name = 'Non-Color'
+    nt.links.new(amap.outputs['Vector'], tn.inputs['Vector']); atex[key] = tn
 # резина: полоса u≈0.35..0.65 темнее
 rub = nt.nodes.new('ShaderNodeMapRange'); rub.interpolation_type = 'SMOOTHSTEP'
 dist = nt.nodes.new('ShaderNodeMath'); dist.operation = 'ABSOLUTE'
@@ -187,7 +236,10 @@ nt.links.new(sep.outputs['X'], sub.inputs[0]); nt.links.new(sub.outputs[0], dist
 nt.links.new(dist.outputs[0], rub.inputs['Value']); rub.inputs['From Min'].default_value = 0.12; rub.inputs['From Max'].default_value = 0.28
 rub.inputs['To Min'].default_value = 0.62; rub.inputs['To Max'].default_value = 1.0
 dark = nt.nodes.new('ShaderNodeMix'); dark.data_type = 'RGBA'; dark.blend_type = 'MULTIPLY'; dark.inputs['Factor'].default_value = 1.0
-nt.links.new(ramp.outputs['Color'], dark.inputs['A'])
+aphoto = nt.nodes.new('ShaderNodeMix'); aphoto.data_type = 'RGBA'; aphoto.blend_type = 'MULTIPLY'; aphoto.inputs['Factor'].default_value = 1.0
+nt.links.new(atex['diff'].outputs['Color'], aphoto.inputs['A']); nt.links.new(ramp.outputs['Color'], aphoto.inputs['B'])
+nt.links.new(aphoto.outputs['Result'], dark.inputs['A'])
+dark.inputs['Factor'].default_value = 1.0
 comb = nt.nodes.new('ShaderNodeCombineColor'); [nt.links.new(rub.outputs[0], comb.inputs[k]) for k in range(3)]
 nt.links.new(comb.outputs[0], dark.inputs['B'])
 # белые линии: |u-0.5| > 0.475
@@ -202,11 +254,14 @@ col_mix = nt.nodes.new('ShaderNodeMix'); col_mix.data_type = 'RGBA'
 nt.links.new(wclamp.outputs[0], col_mix.inputs['Factor']); nt.links.new(dark.outputs['Result'], col_mix.inputs['A'])
 col_mix.inputs['B'].default_value = (0.75, 0.75, 0.73, 1)
 nt.links.new(col_mix.outputs['Result'], b.inputs['Base Color'])
-rr = nt.nodes.new('ShaderNodeMapRange'); nt.links.new(grain.outputs['Distance'], rr.inputs['Value'])
-rr.inputs['To Min'].default_value = 0.62; rr.inputs['To Max'].default_value = 0.92
+rr = nt.nodes.new('ShaderNodeMapRange'); nt.links.new(atex['rough'].outputs['Color'], rr.inputs['Value'])
+rr.inputs['To Min'].default_value = 0.55; rr.inputs['To Max'].default_value = 0.95
 nt.links.new(rr.outputs[0], b.inputs['Roughness'])
-bump = nt.nodes.new('ShaderNodeBump'); bump.inputs['Strength'].default_value = 0.35; bump.inputs['Distance'].default_value = 0.004
-nt.links.new(grain.outputs['Distance'], bump.inputs['Height']); nt.links.new(bump.outputs['Normal'], b.inputs['Normal'])
+anm = nt.nodes.new('ShaderNodeNormalMap'); anm.inputs['Strength'].default_value = 0.8
+nt.links.new(atex['nor'].outputs['Color'], anm.inputs['Color'])
+bump = nt.nodes.new('ShaderNodeBump'); bump.inputs['Strength'].default_value = 0.2; bump.inputs['Distance'].default_value = 0.004
+nt.links.new(grain.outputs['Distance'], bump.inputs['Height']); nt.links.new(anm.outputs['Normal'], bump.inputs['Normal'])
+nt.links.new(bump.outputs['Normal'], b.inputs['Normal'])
 
 # бордюры: красно-белые полосы по 2 м
 kerb, nt, b = nodes_mat('kerb')
@@ -221,21 +276,13 @@ nt.links.new(km.outputs['Result'], b.inputs['Base Color'])
 b.inputs['Roughness'].default_value = 0.45
 
 white, _, b = nodes_mat('paint_white'); b.inputs['Base Color'].default_value = (0.78, 0.78, 0.76, 1); b.inputs['Roughness'].default_value = 0.5
-runoff, _, b = nodes_mat('runoff'); b.inputs['Base Color'].default_value = (0.11, 0.105, 0.09, 1); b.inputs['Roughness'].default_value = 0.85
+sys.path.insert(0, HERE)
+import bcn_env  # noqa: E402
+runoff = bcn_env.pbr('runoff', 'asphalt_02', 3.0, tint=(0.85, 0.85, 0.8, 1), rough_mul=1.1)[0]
 metal, _, b = nodes_mat('gantry'); b.inputs['Base Color'].default_value = (0.08, 0.085, 0.09, 1); b.inputs['Roughness'].default_value = 0.35; b.inputs['Metallic'].default_value = 0.8
-gravel, nt, b = nodes_mat('gravel')
-tc = nt.nodes.new('ShaderNodeTexCoord'); gv = nt.nodes.new('ShaderNodeTexVoronoi'); gv.inputs['Scale'].default_value = 60
-nt.links.new(tc.outputs['Object'], gv.inputs['Vector'])
-gvr = nt.nodes.new('ShaderNodeValToRGB'); gvr.color_ramp.elements[0].color = (0.25, 0.20, 0.14, 1); gvr.color_ramp.elements[1].color = (0.42, 0.36, 0.27, 1)
-nt.links.new(gv.outputs['Distance'], gvr.inputs['Fac']); nt.links.new(gvr.outputs['Color'], b.inputs['Base Color'])
-gbump = nt.nodes.new('ShaderNodeBump'); gbump.inputs['Strength'].default_value = 0.6; gbump.inputs['Distance'].default_value = 0.02
-nt.links.new(gv.outputs['Distance'], gbump.inputs['Height']); nt.links.new(gbump.outputs['Normal'], b.inputs['Normal'])
-b.inputs['Roughness'].default_value = 0.95
-grass, nt, b = nodes_mat('grass')
-tc = nt.nodes.new('ShaderNodeTexCoord'); gn = nt.nodes.new('ShaderNodeTexNoise'); gn.inputs['Scale'].default_value = 0.02; gn.inputs['Detail'].default_value = 8
-nt.links.new(tc.outputs['Object'], gn.inputs['Vector'])
-gr = nt.nodes.new('ShaderNodeValToRGB'); gr.color_ramp.elements[0].color = (0.06, 0.09, 0.025, 1); gr.color_ramp.elements[1].color = (0.20, 0.17, 0.07, 1)
-nt.links.new(gn.outputs['Fac'], gr.inputs['Fac']); nt.links.new(gr.outputs['Color'], b.inputs['Base Color']); b.inputs['Roughness'].default_value = 0.95
+gravel = bcn_env.pbr('gravel', 'gravel', 2.0, tint=(1.0, 0.92, 0.8, 1), bump=1.2)[0]
+grass = bcn_env.pbr('grass', 'aerial_grass_rock', 10.0, tint=(0.85, 0.9, 0.75, 1))[0]
+stand_concrete = bcn_env.pbr('stand_concrete', 'concrete', 2.5)[0]
 
 # дорога, обочины, бордюры
 ribbon('road', -ROAD_W / 2, ROAD_W / 2, 10, 0.0, asph)
@@ -334,35 +381,43 @@ for s0 in range(0, NPT, 400):
     near_d[better] = m_[better]; near_z[better] = seg[k[better], 2]
 near_d = np.sqrt(near_d).reshape(GX.shape); near_z = near_z.reshape(GX.shape)
 zt = hraw - hstart + (Z[0] - 0)
-w = np.clip((near_d - (ROAD_W / 2 + 10)) / 40, 0, 1); w = w * w * (3 - 2 * w)
+w = np.clip((near_d - (ROAD_W / 2 + 30)) / 45, 0, 1); w = w * w * (3 - 2 * w)   # под ограждениями и трибунами земля ровная
 zt = (near_z - 0.25) * (1 - w) + zt * w
 ny, nx = zt.shape
 verts = np.column_stack([GX.ravel(), GY.ravel(), zt.ravel()])
 faces = [(j * nx + i, j * nx + i + 1, (j + 1) * nx + i + 1, (j + 1) * nx + i) for j in range(ny - 1) for i in range(nx - 1)]
 mesh_obj('terrain', verts, faces, None, grass)
 
-# солнце и небо (дневной свет)
-sun_el, sun_az = math.radians(48), math.radians(200)
-world = bpy.data.worlds.new('sky'); sc.world = world; world.use_nodes = True
-wn = world.node_tree.nodes
-sky = wn.new('ShaderNodeTexSky'); sky.sky_type = 'MULTIPLE_SCATTERING'; sky.sun_disc = False
-sky.sun_elevation = sun_el; sky.sun_rotation = sun_az
-world.node_tree.links.new(sky.outputs['Color'], wn['Background'].inputs['Color'])
-wn['Background'].inputs['Strength'].default_value = 0.22
-sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = 2.6; sun.angle = math.radians(1.2); sun.color = (1.0, 0.96, 0.9)
-so = bpy.data.objects.new('sun', sun); col.objects.link(so)
-so.rotation_euler = mathutils.Vector((-math.cos(sun_el) * math.sin(sun_az), -math.cos(sun_el) * math.cos(sun_az), -math.sin(sun_el))).to_track_quat('-Z', 'Y').to_euler()
+# лёгкая облачность: панорама неба даёт фон, мягкий свет и отражения (солнце за облаками, отдельной лампы нет)
+bcn_env.world_hdri(sc, strength=1.0, rotation=math.radians(HDRI_ROT))
+
+# окружение: ограждения, трибуны, деревья
+env_col = bpy.data.collections.new('environment'); sc.collection.children.link(env_col)
+nb, nf, nt_ = bcn_env.barriers(at, L, DS, mask, ROAD_W, env_col)
+seat_colors = [(0.02, 0.18, 0.11, 1), (0.6, 0.6, 0.58, 1), (0.03, 0.08, 0.25, 1), (0.45, 0.04, 0.03, 1), (0.55, 0.42, 0.05, 1)]
+bcn_env.recolor_random(bcn_env.lib_collection('plastic_monobloc_chair_01'), seat_colors)
+ns = bcn_env.grandstand('stand_main', at, -330.0, 330.0, 1, ROAD_W, stand_concrete, metal, env_col, rows=18)
+ns += bcn_env.grandstand('stand_t1', at, 640.0, 860.0, 1, ROAD_W, stand_concrete, metal, env_col, rows=14)
+ns += bcn_env.grandstand('stand_final', at, L - 560.0, L - 360.0, 1, ROAD_W, stand_concrete, metal, env_col, rows=14)
+_zi = lambda x, y: np.array([zt[int(np.clip((yy - gy[0]) / res, 0, ny - 1)), int(np.clip((xx - gx[0]) / res, 0, nx - 1))] for xx, yy in zip(x, y)])
+_ni = lambda x, y: np.array([near_d[int(np.clip((yy - gy[0]) / res, 0, ny - 1)), int(np.clip((xx - gx[0]) / res, 0, nx - 1))] for xx, yy in zip(x, y)])
+ntr = bcn_env.trees(P2, _zi, _ni, xmin + 50, xmax - 50, ymin + 50, ymax - 50, env_col)
+print(f'окружение: отбойников {nb}, звеньев сетки {nf}, шин {nt_}, мест на трибунах {ns}, деревьев {ntr}', flush=True)
 
 # ---------- машина ----------
 car_setup.CAR_LEN = 5.61
 root, parts = car_setup.import_car(os.path.join(ROOT, '..', 'real-f1', 'model', 'amr24.glb'))
 car_setup.fix_materials(root.children_recursive)
-# днём лак отражает всё небо и краска выглядит хромом: делаем лак тоньше (только в этом ролике)
+# лак краски: под облачным небом отражение мягкое; база чуть матовее, чтобы цвет оставался зелёным
 for m in {sl.material for o in root.children_recursive if o.type == 'MESH' for sl in o.material_slots if sl.material}:
     bb = next((n for n in m.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'), None)
     if bb and bb.inputs['Coat Weight'].default_value > 0.9:
-        bb.inputs['Coat Weight'].default_value = 0.45
-        bb.inputs['Roughness'].default_value = 0.4
+        bb.inputs['Coat Weight'].default_value = COAT
+        bb.inputs['Coat Roughness'].default_value = 0.06
+        bb.inputs['Roughness'].default_value = 0.35
+    elif bb and 'carbon' in m.name.lower():   # карбон: тёмный полуглянец, без серебристого отблеска неба
+        bb.inputs['Coat Weight'].default_value = 0.25
+        bb.inputs['Roughness'].default_value = 0.5
 
 
 def bake(obj, path, size, rows):
@@ -382,20 +437,22 @@ def bake(obj, path, size, rows):
 times = [f / FPS for f in range(N)]
 S = [dist_at(t) for t in times]
 E = [explode(t) for t in times]
-car_loc, car_rot, steer = [], [], []
-prev_yaw = None
+V = np.gradient(np.array(S), 1 / FPS)                    # скорость, м/с
+ACC = smooth_time(np.gradient(V, 1 / FPS), 4)             # продольное ускорение, м/с²
+car_loc, yaw_, pitch_, kap_ = [], [], [], []
 for t, s in zip(times, S):
     p, d, left, kap = at(s)
-    yaw = math.atan2(d[1], d[0])
-    if prev_yaw is not None:  # без скачков на ±π
-        while yaw - prev_yaw > math.pi: yaw -= 2 * math.pi
-        while yaw - prev_yaw < -math.pi: yaw += 2 * math.pi
-    prev_yaw = yaw
-    pitch = -math.atan2(d[2], math.hypot(d[0], d[1]))
-    car_loc.append(tuple(p)); car_rot.append((0.0, pitch, yaw))
-    steer.append(math.atan(3.6 * kap) * (1.0 if t >= T_GO else 0.0))
+    h, sl = frame_at(s)
+    car_loc.append(tuple(p)); yaw_.append(h); pitch_.append(-sl); kap_.append(kap)
+kap_ = smooth_time(kap_, 3)
+lat = V ** 2 * kap_                                       # боковое ускорение (+ влево)
+roll = smooth_time(np.clip(0.0032 * lat, -0.035, 0.035), 5)          # крен наружу поворота, до 2°
+dive = smooth_time(np.clip(-0.0011 * ACC, -0.012, 0.03), 5)          # клевок носом при торможении
+car_rot = [(roll[f], pitch_[f] + dive[f], yaw_[f]) for f in range(N)]
+steer = [math.atan(3.6 * kap_[f]) * (1.0 if times[f] >= T_GO else 0.0) for f in range(N)]
 bake(root, 'location', 3, car_loc)
 bake(root, 'rotation_euler', 3, car_rot)
+np.savez(os.path.join(ROOT, 'build', 'motion.npz'), t=np.array(times), s=np.array(S), v=V, acc=ACC, lat=lat, explode=np.array(E))
 
 # колёса: угол качения = путь / радиус (+ раскрутка при разборе)
 spin_ex = np.cumsum([9 * e / FPS for e in E])
@@ -434,23 +491,31 @@ for name, info in parts.items():
 cam = bpy.data.objects.new('cam', bpy.data.cameras.new('cam')); col.objects.link(cam); sc.camera = cam
 cam.data.lens = 26; cam.data.clip_start = 0.1; cam.data.clip_end = 4000
 cam.data.sensor_fit = 'HORIZONTAL'
-cam_loc, cam_rot = [], []
+raw_pos, raw_tgt = [], []
 for t, s in zip(times, S):
     p, d, left, _ = at(s)
-    # старт: сзади-сбоку, видны машина и огни впереди; медленный наезд
-    k_start = 1 - smooth((t - (T_GO - 0.2)) / 1.4)
-    push = smooth(t / T_GO)
-    a_pos = p - d * (9.5 - 2.5 * push) + left * (4.2 - 0.8 * push) + np.array([0, 0, 1.9])
-    a_tgt = p + d * 5.0 + np.array([0, 0, 2.3])
+    h, _ = frame_at(s)
+    # старт: камера сбоку у машины; пока детали висят, плавно облетает назад (90° → 180° от носа)
+    ang = math.radians(90 + 90 * smooth((t - 2.6) / 4.0))
+    r = 7.6 + 2.0 * smooth((t - 1.8) / 1.4) - 2.4 * smooth((t - 5.2) / 1.6)
+    hgt = 1.15 + 0.5 * smooth((t - 1.8) / 1.4) + 0.4 * smooth((t - 5.2) / 1.6)
+    c = p + np.array([0, 0, 0.75])
+    a_pos = c + r * np.array([math.cos(h + ang), math.sin(h + ang), 0.0]) + np.array([0, 0, hgt - 0.75])
+    a_tgt = c + d * (5.5 * smooth((t - 4.5) / 2.5)) + np.array([0, 0, 0.25 * smooth((t - 4.5) / 2.5)])
     # гонка: позади машины по трассе, чуть выше
-    pc, dc, lc, _ = at(s - 7.2)
+    pc, _, _, _ = at(s - 7.2)
     pt, _, _, _ = at(s + 14.0)
     b_pos = pc + np.array([0, 0, 2.05])
     b_tgt = pt + np.array([0, 0, 0.9])
-    pos = a_pos * k_start + b_pos * (1 - k_start)
-    tgt = a_tgt * k_start + b_tgt * (1 - k_start)
-    cam_loc.append(tuple(pos))
-    cam_rot.append(mathutils.Vector(tgt - pos).to_track_quat('-Z', 'Y').to_euler())
+    k = smooth((t - (T_GO - 0.4)) / 0.9)
+    raw_pos.append(a_pos * (1 - k) + b_pos * k)
+    raw_tgt.append(a_tgt * (1 - k) + b_tgt * k)
+cpos = smooth_time(raw_pos, 4)
+ctgt = smooth_time(raw_tgt, 6)
+cam_loc, cam_rot = [], []
+for f in range(N):
+    cam_loc.append(tuple(cpos[f]))
+    cam_rot.append(mathutils.Vector(ctgt[f] - cpos[f]).to_track_quat('-Z', 'Y').to_euler())
 for i in range(1, N):  # без скачков угла
     for k in range(3):
         a, b_ = cam_rot[i - 1][k], cam_rot[i][k]
@@ -475,7 +540,7 @@ r.use_motion_blur = True; r.motion_blur_shutter = 0.3
 r.resolution_x, r.resolution_y, r.resolution_percentage = 1920, 1080, args.scale
 r.image_settings.file_format = 'PNG'; r.image_settings.color_depth = '8'
 sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = 'AgX - Medium High Contrast'
-sc.view_settings.exposure = -0.35
+sc.view_settings.exposure = 0.9
 r.use_persistent_data = True
 if args.save_blend:
     bpy.ops.wm.save_as_mainfile(filepath=args.save_blend)
