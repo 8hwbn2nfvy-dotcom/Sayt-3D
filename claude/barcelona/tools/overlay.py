@@ -83,7 +83,7 @@ else:
         print('нет build/audio/mix.wav — видео без звука (запусти tools/audio.py)')
     ff = subprocess.Popen(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W}x{H}', '-r', str(FPS), '-i', '-',
                            *audio_in, *audio_out,
-                           '-c:v', 'libx264', '-preset', 'slow', '-crf', '16', '-pix_fmt', 'yuv420p', '-shortest', '-movflags', '+faststart', out], stdin=subprocess.PIPE)
+                           '-c:v', 'libx264', '-preset', 'slow', '-crf', '19', '-pix_fmt', 'yuv420p', '-shortest', '-movflags', '+faststart', out], stdin=subprocess.PIPE)
     for f in range(N):
         im = draw(Image.open(os.path.join(frames, f'{f:04d}.png')).convert('RGB'), f / FPS)
         ff.stdin.write(im.tobytes())
