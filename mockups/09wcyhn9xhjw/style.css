@@ -82,7 +82,7 @@ section{padding:56px 0}
 .hero h1{max-width:14em;animation:hero-in .6s ease both}
 .hero .facts{display:flex;flex-wrap:wrap;gap:8px 24px;margin:0 0 24px;padding:0;list-style:none;font-weight:700}
 .hero .facts li{display:flex;align-items:center;gap:8px}
-.hero .facts li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--green)}
+.hero .facts li::before{content:"";width:16px;height:3px;background:var(--green)}
 .hero .lead{margin-bottom:32px}
 .down{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;margin-top:40px;border:2px solid var(--line);border-radius:50%;color:var(--ink);text-decoration:none;font-size:22px}
 @keyframes hero-in{from{opacity:0;transform:translateY(20px)}}
@@ -202,3 +202,32 @@ fieldset{border:0;margin:0;padding:0;display:grid;gap:16px;min-width:0}
 @media (max-width:1023px){.calc-first{display:flex;flex-direction:column;gap:48px}.calc-first .side{order:-1}}
 .field[hidden]{display:none}
 #raschet{scroll-margin-top:96px}
+
+/* Нарисованная схема адресов (без внешних карт) */
+.scheme-sec{background:var(--paper)}
+.scheme{margin:0;display:grid;gap:12px}
+.scheme svg{width:100%;height:auto;display:block;max-width:900px}
+.s-city{fill:var(--soft);stroke:var(--line);stroke-width:2}
+.s-cap{font:800 22px var(--font);fill:var(--ink)}
+.s-pt circle{fill:var(--red);stroke:#fff;stroke-width:3}
+.s-pt text{font:800 20px var(--font);fill:var(--red)}
+.s-pt text.s-sm{font:600 15px var(--font);fill:var(--ink)}
+.scheme figcaption{color:var(--muted);font-size:15px}
+.loc-n{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--red);color:#fff;font-weight:800;border-radius:4px}
+.also{margin-top:24px;color:var(--muted)}
+.also a{display:inline-flex;align-items:center;min-height:48px;font-weight:700}
+body.locked{overflow:hidden}
+.leaders{list-style:none;margin:0;padding:0;border-top:2px solid var(--ink)}
+.leaders li{display:flex;align-items:baseline;gap:8px;padding:14px 0;border-bottom:1px solid var(--line)}
+.leaders .nm{font-weight:700}
+.leaders .dots{flex:1;border-bottom:2px dotted #b9adad;transform:translateY(-4px);min-width:24px}
+.leaders .pr{font-weight:800;white-space:nowrap;color:var(--red)}
+.leaders .ds{display:block;font-weight:400;color:var(--muted);font-size:15px}
+.leaders .lt{flex:0 1 auto;min-width:0}
+@media (max-width:719px){.leaders li{flex-wrap:wrap}.leaders .dots{display:none}.leaders .pr{width:100%}}
+.leaders .nm a{display:inline-flex;align-items:center;min-height:48px}
+
+/* Цели нажатия не ниже 48 px */
+a[href^="tel:"]:not(.btn),a[href^="mailto:"]:not(.btn),a[href^="https:"]:not(.btn),.crumbs a{display:inline-flex;align-items:center;min-height:48px}
+.logo{min-height:48px}
+.site-footer ul a{min-height:48px}
