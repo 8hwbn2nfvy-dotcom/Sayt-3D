@@ -57,12 +57,14 @@ function placeholders(d) {
 const template = readFileSync(TEMPLATE, "utf8");
 if (template.split(SLOT).length !== 2) fail("в шаблоне должен быть ровно один пустой тег company-data");
 const names = readdirSync(DATA_DIR).filter(f => f.endsWith(".json")).map(f => f.slice(0, -5)).sort();
+// Компании со статичным сайтом (static_site: true) этим шаблоном не собираются.
+const templated = names.filter(n => !JSON.parse(readFileSync(join(DATA_DIR, n + ".json"), "utf8")).static_site);
 const args = process.argv.slice(2);
 
 if (args.includes("--check")) {
   let bad = 0;
   const dirs = new Set();
-  for (const n of names) {
+  for (const n of templated) {
     const d = load(n);
     if (dirs.has(d.mockup_dir)) { console.error(`✗ ${n}: mockup_dir повторяется`); bad++; }
     dirs.add(d.mockup_dir);
@@ -82,9 +84,9 @@ if (args.includes("--check")) {
   process.exit(bad ? 1 : 0);
 }
 
-const pick = args.length ? args : names;
+const pick = args.length ? args : templated;
 for (const n of pick) {
-  if (!names.includes(n)) fail(`нет data/${n}.json`);
+  if (!templated.includes(n)) fail(`нет data/${n}.json или это статичный сайт`);
   const d = load(n);
   const dir = join(ROOT, "mockups", d.mockup_dir);
   mkdirSync(dir, { recursive: true });

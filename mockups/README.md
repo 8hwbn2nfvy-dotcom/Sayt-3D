@@ -4,7 +4,7 @@
 
 | Компания | Макет | Данные |
 |---|---|---|
-| Типография «Куранты», Казань | `mockups/09wcyhn9xhjw/index.html` | `data/kuranty.json` |
+| Типография «Куранты», Казань | `mockups/09wcyhn9xhjw/` — статичный многостраничный сайт, см. `ЗАМЕТКИ.md` в папке | `data/kuranty.json` |
 | Центр печати «Линк», Казань | `mockups/w4t9rdbykf0k/index.html` | `data/link.json` |
 | Кукурузник, Екатеринбург | `mockups/0p2tva59m8a6/index.html` | `data/kukuruznik.json` |
 
