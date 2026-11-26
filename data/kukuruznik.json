@@ -19,7 +19,7 @@
   "hero_chips": [
     "С 2011 года",
     "Собственное производство",
-    "Без выходных на Мамина-Сибиряка"
+    "На Мамина-Сибиряка без выходных"
   ],
   "locations": [
     {
@@ -253,9 +253,41 @@
     "ink": "#492412",
     "muted": "#7A5A48",
     "bg": "#FFF9F0",
-    "surface": "#FFFFFF",
-    "radius": 14,
+    "radius": 12,
     "heading": "rounded",
-    "heading_case": "none"
+    "font": "opensans",
+    "strip_bg": "#FFB85E",
+    "strip_ink": "#492412",
+    "order_bg": "#FFF6EA",
+    "bands": [
+      {
+        "bg": "#FFE9C7",
+        "ink": "#492412",
+        "muted": "#7A5A48"
+      },
+      {
+        "bg": "#FFFDF8"
+      },
+      {
+        "bg": "#FFB85E",
+        "ink": "#492412",
+        "muted": "#6B3F22"
+      },
+      {
+        "bg": "#FBE3E6",
+        "ink": "#492412",
+        "muted": "#7A4A50"
+      },
+      {
+        "bg": "#492412",
+        "ink": "#FFF4E6",
+        "muted": "#E6CDB8",
+        "dark": true
+      },
+      {
+        "bg": "#FFF6EA",
+        "ink": "#492412"
+      }
+    ]
   }
 }

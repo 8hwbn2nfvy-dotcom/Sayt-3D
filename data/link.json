@@ -18,8 +18,8 @@
   },
   "hero_chips": [
     "Бесплатная доставка курьером",
-    "Копицентр в будни 7:00–21:00",
-    "Чертежи А0–А3"
+    "Копицентр в будни с 7:00 до 21:00",
+    "Печать чертежей А0–А3"
   ],
   "locations": [
     {
@@ -272,9 +272,43 @@
     "ink": "#111111",
     "muted": "#555555",
     "bg": "#FFFFFF",
-    "surface": "#F1F6FA",
     "radius": 0,
     "heading": "condensed",
-    "heading_case": "uppercase"
+    "heading_case": "uppercase",
+    "font": "roboto",
+    "strip_bg": "#111111",
+    "strip_ink": "#FFFFFF",
+    "order_bg": "#F2F7FB",
+    "focus": "#111111",
+    "bands": [
+      {
+        "bg": "#178ECF",
+        "ink": "#FFFFFF",
+        "muted": "#DCEFFA",
+        "dark": true
+      },
+      {
+        "bg": "#FFFFFF"
+      },
+      {
+        "bg": "#FDEB34",
+        "ink": "#111111",
+        "muted": "#3D3A10"
+      },
+      {
+        "bg": "#EAF4FB",
+        "ink": "#111111"
+      },
+      {
+        "bg": "#111111",
+        "ink": "#FFFFFF",
+        "muted": "#BBBBBB",
+        "dark": true
+      },
+      {
+        "bg": "#F4F4F4",
+        "ink": "#111111"
+      }
+    ]
   }
 }

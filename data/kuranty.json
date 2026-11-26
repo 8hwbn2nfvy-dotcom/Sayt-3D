@@ -18,8 +18,8 @@
   },
   "hero_chips": [
     "С 2000 года",
-    "Производство круглосуточно",
-    "Отдел продаж 9:00–18:00"
+    "Производство работает круглосуточно",
+    "Отдел продаж с 9:00 до 18:00"
   ],
   "locations": [
     {
@@ -313,9 +313,43 @@
     "ink": "#262626",
     "muted": "#666666",
     "bg": "#FFFFFF",
-    "surface": "#F7F3F3",
-    "radius": 22,
-    "heading": "sans",
-    "heading_case": "none"
+    "radius": 6,
+    "heading": "roboto",
+    "font": "roboto",
+    "strip_bg": "#A3161F",
+    "strip_ink": "#FFFFFF",
+    "order_bg": "#F4ECE4",
+    "bands": [
+      {
+        "bg": "#F4ECE4",
+        "ink": "#262626",
+        "muted": "#5e5550"
+      },
+      {
+        "bg": "#FFFFFF"
+      },
+      {
+        "bg": "#2A1214",
+        "ink": "#FFFFFF",
+        "muted": "#D9C4C4",
+        "dark": true
+      },
+      {
+        "bg": "#EAF2E8",
+        "ink": "#262626",
+        "muted": "#4f5e4c"
+      },
+      {
+        "bg": "#A3161F",
+        "ink": "#FFFFFF",
+        "muted": "#F1D5D5",
+        "dark": true
+      },
+      {
+        "bg": "#F4ECE4",
+        "ink": "#262626",
+        "muted": "#5e5550"
+      }
+    ]
   }
 }
