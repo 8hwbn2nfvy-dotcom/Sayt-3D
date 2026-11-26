@@ -26,6 +26,14 @@ function load(name) {
     if (!["site", "example"].includes(c.base_source)) fail(`${file}: calculator[${i}].base_source должен быть site или example`);
     if (c.base_source === "site" && !d.services.some(s => s.price_from === c.base)) fail(`${file}: calculator[${i}] помечен как цена с сайта, но такой цены нет в services`);
   });
+  const slugs = new Set();
+  d.services.forEach((s, i) => {
+    if (!/^[a-z0-9-]+$/.test(s.slug || "")) fail(`${file}: services[${i}].slug должен быть латиницей (a-z, 0-9, -)`);
+    if (slugs.has(s.slug)) fail(`${file}: services[${i}].slug «${s.slug}» повторяется`);
+    slugs.add(s.slug);
+    for (const id of s.calc || []) if (!d.calculator.some(c => c.id === id)) fail(`${file}: services[${i}].calc ссылается на несуществующий калькулятор «${id}»`);
+  });
+  (d.portfolio || []).forEach((p, i) => { if (p.service && !slugs.has(p.service)) fail(`${file}: portfolio[${i}].service «${p.service}» нет в services`); });
   return d;
 }
 
@@ -37,7 +45,7 @@ function render(template, d) {
 function placeholders(d) {
   const out = [];
   (function walk(v, path) {
-    if (v === null) { if (!/(locations\[\d+\]\.phone|\.date|\.source_url|\.rating)$/.test(path)) out.push(`${path}: пусто (null)`); return; }
+    if (v === null) { if (!/(locations\[\d+\]\.phone|\.date|\.source_url|\.rating|services\[\d+\]\.text)$/.test(path)) out.push(`${path}: пусто (null)`); return; }
     if (typeof v === "string") { for (const m of v.match(/\[[^\]]+\]/g) || []) out.push(`${path}: ${m}`); return; }
     if (Array.isArray(v)) { v.forEach((x, i) => walk(x, `${path}[${i}]`)); return; }
     if (typeof v === "object") for (const [k, x] of Object.entries(v)) walk(x, path ? `${path}.${k}` : k);
