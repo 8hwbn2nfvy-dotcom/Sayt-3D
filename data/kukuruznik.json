@@ -1,0 +1,261 @@
+{
+  "mockup_dir": "0p2tva59m8a6",
+  "name": "Кукурузник",
+  "short_name": "Кукурузник",
+  "kind": "Типография и сеть копицентров",
+  "city": "Екатеринбург",
+  "site": "kukuruznik.net",
+  "headline": "Центр печати в Екатеринбурге",
+  "founded": 2011,
+  "phone": {
+    "display": "+7 (343) 302-18-87",
+    "tel": "+73433021887"
+  },
+  "email": "kukuruznik-ekb@mail.ru",
+  "messengers": {
+    "whatsapp": "https://wa.me/73433021887",
+    "telegram": "https://t.me/kukuruznik_ms"
+  },
+  "hero_chips": [
+    "С 2011 года",
+    "Собственное производство",
+    "Без выходных на Мамина-Сибиряка"
+  ],
+  "locations": [
+    {
+      "title": "Основной филиал",
+      "address": "Екатеринбург, ул. Мамина-Сибиряка, д. 137",
+      "route_query": "Екатеринбург, улица Мамина-Сибиряка, 137",
+      "hours": [
+        "Пн–пт 9:00–20:00",
+        "Сб–вс 10:00–20:00"
+      ],
+      "phone": null
+    },
+    {
+      "title": "Дополнительный филиал",
+      "address": "Екатеринбург, ул. Чапаева, д. [уточнить адрес: 14/1 или 14/7]",
+      "route_query": null,
+      "hours": [
+        "Пн–пт 10:00–19:00",
+        "Сб–вс — выходной"
+      ],
+      "phone": null
+    }
+  ],
+  "delivery": null,
+  "services": [
+    {
+      "name": "Визитки",
+      "price_from": null,
+      "note": "и дизайн визиток"
+    },
+    {
+      "name": "Листовки",
+      "price_from": null,
+      "note": ""
+    },
+    {
+      "name": "Календари",
+      "price_from": null,
+      "note": "в том числе с фото"
+    },
+    {
+      "name": "Буклеты",
+      "price_from": null,
+      "note": ""
+    },
+    {
+      "name": "Печать на холсте",
+      "price_from": null,
+      "note": "интерьерная печать фото, защита лаком"
+    },
+    {
+      "name": "Фото на документы",
+      "price_from": null,
+      "note": ""
+    },
+    {
+      "name": "Сувениры",
+      "price_from": null,
+      "note": "кружки, магниты, футболки, пазлы, ёлочные шары"
+    },
+    {
+      "name": "Корпоративная атрибутика",
+      "price_from": null,
+      "note": "ежедневники, посуда, ручки, флешки"
+    },
+    {
+      "name": "Дизайн",
+      "price_from": null,
+      "note": "дизайн полиграфии, ретушь фотографий"
+    }
+  ],
+  "calculator": [
+    {
+      "id": "vizitki",
+      "name": "Визитки",
+      "base": 700,
+      "base_source": "example",
+      "base_note": "[уточнить цену]",
+      "params": [
+        {
+          "label": "Тираж",
+          "type": "select",
+          "example": true,
+          "options": [
+            {
+              "label": "100 шт.",
+              "k": 1
+            },
+            {
+              "label": "200 шт.",
+              "k": 1.6
+            },
+            {
+              "label": "500 шт.",
+              "k": 3
+            },
+            {
+              "label": "1000 шт.",
+              "k": 5
+            }
+          ]
+        },
+        {
+          "label": "Печать",
+          "type": "select",
+          "example": true,
+          "options": [
+            {
+              "label": "Односторонняя",
+              "k": 1
+            },
+            {
+              "label": "Двусторонняя",
+              "k": 1.4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "holst",
+      "name": "Фото на холсте",
+      "base": 1500,
+      "base_source": "example",
+      "base_note": "[уточнить цену]",
+      "params": [
+        {
+          "label": "Размер",
+          "type": "select",
+          "example": true,
+          "options": [
+            {
+              "label": "30×40 см",
+              "k": 1
+            },
+            {
+              "label": "40×50 см",
+              "k": 1.4
+            },
+            {
+              "label": "50×70 см",
+              "k": 2
+            },
+            {
+              "label": "60×90 см",
+              "k": 2.8
+            }
+          ]
+        },
+        {
+          "label": "Обработка фото",
+          "type": "select",
+          "example": true,
+          "options": [
+            {
+              "label": "Без обработки",
+              "k": 1
+            },
+            {
+              "label": "Дрим-арт портрет",
+              "k": 1.8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "foto-dokumenty",
+      "name": "Фото на документы",
+      "base": 400,
+      "base_source": "example",
+      "base_note": "за комплект [уточнить цену]",
+      "params": [
+        {
+          "label": "Количество комплектов",
+          "type": "number",
+          "unit": "компл.",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "default": 1,
+          "example": false
+        }
+      ]
+    }
+  ],
+  "reviews_note": "На сайте отзывов нет. Можно перенести отзывы из карточек на картах.",
+  "reviews": [
+    {
+      "author": "[вставить имя]",
+      "text": "[вставить текст отзыва]",
+      "rating": null,
+      "date": null,
+      "source_url": null
+    },
+    {
+      "author": "[вставить имя]",
+      "text": "[вставить текст отзыва]",
+      "rating": null,
+      "date": null,
+      "source_url": null
+    },
+    {
+      "author": "[вставить имя]",
+      "text": "[вставить текст отзыва]",
+      "rating": null,
+      "date": null,
+      "source_url": null
+    }
+  ],
+  "portfolio": [
+    "Календари",
+    "Фото на холсте",
+    "Ёлочные шары с логотипом",
+    "Кружки",
+    "Визитки",
+    "Корпоративные сувениры"
+  ],
+  "about": [
+    "Собственное производство: печатаем сами.",
+    "Храним ваши макеты: повторный заказ можно сделать удалённо (по данным сайта).",
+    "Если что-то не так, перепечатаем тираж или вернём деньги (по данным сайта)."
+  ],
+  "price_checked": "26.11.2026",
+  "price_source": "сайт kukuruznik.net, проверено 26.11.2026 — прайса нет",
+  "theme": {
+    "primary": "#D93A52",
+    "primary_text": "#FFFFFF",
+    "accent": "#FFB85E",
+    "accent_text": "#492412",
+    "ink": "#492412",
+    "muted": "#7A5A48",
+    "bg": "#FFF9F0",
+    "surface": "#FFFFFF",
+    "radius": 14,
+    "heading": "rounded",
+    "heading_case": "none"
+  }
+}
