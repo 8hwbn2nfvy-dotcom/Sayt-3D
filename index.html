@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Три типографии — демо дизайна</title>
+<meta name="description" content="Демо дизайна сайтов трёх вымышленных типографий.">
+<style>
+:root{--ink:#1d1d1f;--muted:#5c5c60;--bg:#f6f4ef;--line:#d9d4c8}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.mockbar{background:#111;color:#ffe45c;font:700 13px/1.4 Arial,sans-serif;text-align:center;padding:8px 16px}
+.wrap{max-width:1100px;margin:0 auto;padding:56px 16px}
+h1{font-size:clamp(32px,6vw,52px);line-height:1.1;margin:0 0 16px}
+.lead{color:var(--muted);max-width:40em;margin:0 0 40px}
+.list{list-style:none;margin:0;padding:0;display:grid;gap:0;border-top:3px solid var(--ink)}
+.list a{display:grid;grid-template-columns:12px 1fr;gap:8px 20px;align-items:start;padding:24px 0;min-height:48px;border-bottom:1px solid var(--line);color:inherit;text-decoration:none}
+.list .sw{grid-row:span 2;height:100%;min-height:64px}
+.list b{font-size:24px}
+.list span.d{color:var(--muted)}
+.list a:hover b{text-decoration:underline}
+a:focus-visible{outline:3px solid #111;outline-offset:3px}
+.note{margin-top:32px;color:var(--muted);font-size:15px}
+</style>
+</head>
+<body>
+<div class="mockbar">Демо дизайна. Компании, адреса, контакты и цены вымышлены</div>
+<main class="wrap">
+  <h1>Сайты трёх типографий</h1>
+  <p class="lead">Демо дизайна: у каждой типографии свои цвета, шрифт и устройство страниц. Названия, города, адреса, телефоны и цены вымышлены; заявки никуда не отправляются.</p>
+  <ul class="list">
+    <li><a href="litera/index.html"><span class="sw" style="background:#a3161f"></span><b>Типография «Литера»</b><span class="d">Строгий вид, расчёт по таблице цен, пять адресов на схеме. 12 страниц.</span></a></li>
+    <li><a href="kegl/index.html"><span class="sw" style="background:#178ECF"></span><b>Центр печати «Кегль»</b><span class="d">Синий, жёлтый и чёрный, прямые углы, узкие заглавные заголовки. 8 страниц.</span></a></li>
+    <li><a href="ottisk/index.html"><span class="sw" style="background:#D93A52"></span><b>Типография «Оттиск»</b><span class="d">Тёплые цвета, скругления, блок преимуществ. 8 страниц.</span></a></li>
+  </ul>
+  <p class="note">Жёлтым подсвечены места, куда вставляются настоящие данные компании.</p>
+</main>
+</body>
+</html>
