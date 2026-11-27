@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Контакты и запись — Lion</title>
+<meta name="description" content="Контакты фитнес-клуба Lion и запись.">
+<link rel="stylesheet" href="style.css">
+<script src="site.js" defer></script>
+</head>
+<body>
+<div class="mockbar">Макет для Lion — не для публикации</div>
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="logo" href="index.html"><b>Lion</b><span>фитнес-клуб</span></a>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Меню</button>
+    <nav class="nav" id="nav" aria-label="Разделы сайта"><a href="index.html">Главная</a><a href="uslugi.html">Услуги</a><a href="kontakty.html" aria-current="page">Контакты и запись</a></nav>
+  </div>
+  <div class="wrap quick"><span class="btn btn-main is-ph"><span>Позвонить</span><span class="ph">[вставить телефон]</span></span><span class="btn btn-line is-ph"><span>WhatsApp</span><span class="ph">[вставить]</span></span></div>
+</header>
+<main>
+<section class="page-head">
+  <div class="wrap"><p class="crumbs"><a href="index.html">Главная</a> / Контакты и запись</p><h1>Контакты и запись</h1></div>
+</section>
+<section class="contacts">
+  <div class="wrap">
+    <dl class="facts reveal">
+      <dt>Телефон</dt><dd><span class="ph">[вставить телефон]</span></dd>
+      <dt>WhatsApp</dt><dd><span class="ph">[вставить]</span></dd>
+      <dt>Часы</dt><dd><span class="ph">[вставить часы]</span></dd>
+    </dl>
+    <div class="actions reveal"><span class="btn btn-main is-ph"><span>Позвонить</span><span class="ph">[вставить телефон]</span></span><span class="btn btn-line is-ph"><span>WhatsApp</span><span class="ph">[вставить]</span></span></div>
+  </div>
+</section>
+<section class="find" id="kak-nayti">
+  <div class="wrap grid two">
+    <div class="reveal">
+      <h2>Как найти</h2>
+      <p>Площадь Ленина, 8Б, бизнес-центр «Губернская площадь». Клуб внизу, в цокольном этаже.</p>
+      <dl class="facts">
+        <dt>Адрес</dt><dd>БЦ Губернская площадь, площадь Ленина, 8Б, цокольный этаж, 394006, Воронеж, Центральный район</dd>
+        <dt>Этаж</dt><dd>Цокольный этаж бизнес-центра «Губернская площадь»</dd><dt>Вход</dt><dd><span class="ph">[вставить, как найти вход с улицы]</span></dd>
+        <dt>Часы</dt><dd><span class="ph">[вставить часы]</span></dd>
+      </dl>
+      <a class="btn btn-main" href="https://2gis.ru/voronezh/search/Lion%2C%20%D0%91%D0%A6%20%D0%93%D1%83%D0%B1%D0%B5%D1%80%D0%BD%D1%81%D0%BA%D0%B0%D1%8F%20%D0%BF%D0%BB%D0%BE%D1%89%D0%B0%D0%B4%D1%8C%2C%20%D0%BF%D0%BB%D0%BE%D1%89%D0%B0%D0%B4%D1%8C%20%D0%9B%D0%B5%D0%BD%D0%B8%D0%BD%D0%B0%2C%208%D0%91%2C%20%D1%86%D0%BE%D0%BA%D0%BE%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9%20%D1%8D%D1%82%D0%B0%D0%B6%2C%20394006%2C%20%D0%92%D0%BE%D1%80%D0%BE%D0%BD%D0%B5%D0%B6%2C%20%D0%A6%D0%B5%D0%BD%D1%82%D1%80%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9%20%D1%80%D0%B0%D0%B9%D0%BE%D0%BD" rel="noopener">Открыть в 2ГИС</a>
+    </div>
+    <div class="photo reveal" aria-hidden="true"></div>
+  </div>
+</section>
+<section class="zapis" id="zapis">
+  <div class="wrap narrow">
+    <h2 class="reveal">Записаться</h2>
+    <form class="form reveal" id="zapis-form" action="prinyato.html" method="get">
+      <div class="field">
+        <label for="f-need">Что нужно</label>
+        <textarea id="f-need" rows="3" required placeholder="Своими словами"></textarea>
+        <p class="err" id="e-need" hidden>Напишите, что нужно.</p>
+      </div>
+      <div class="field">
+        <label for="f-date">Дата</label>
+        <input id="f-date" type="date" required>
+        <p class="err" id="e-date" hidden>Выберите дату не раньше сегодняшней.</p>
+      </div>
+      <div class="field">
+        <label for="f-name">Имя</label>
+        <input id="f-name" type="text" autocomplete="name" required>
+        <p class="err" id="e-name" hidden>Напишите имя.</p>
+      </div>
+      <div class="field">
+        <label for="f-phone">Телефон</label>
+        <input id="f-phone" type="tel" autocomplete="tel" inputmode="tel" required pattern="(\D*\d){10,}\D*" placeholder="+7 900 000-00-00">
+        <p class="err" id="e-phone" hidden>Нужно не меньше 10 цифр.</p>
+      </div>
+      <button class="btn btn-main" type="submit">Отправить заявку</button>
+    </form>
+  </div>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap foot">
+    <div><b>Lion</b><p>Фитнес-клуб</p><p>БЦ Губернская площадь, площадь Ленина, 8Б, цокольный этаж, 394006, Воронеж, Центральный район</p></div>
+    <nav aria-label="Меню в подвале"><ul><li><a href="index.html">Главная</a></li><li><a href="uslugi.html">Услуги</a></li><li><a href="kontakty.html">Контакты и запись</a></li></ul></nav>
+    <div><p>Часы: <span class="ph">[вставить часы]</span></p><p>Телефон: <span class="ph">[вставить телефон]</span></p><p><a href="https://2gis.ru/voronezh/search/Lion%2C%20%D0%91%D0%A6%20%D0%93%D1%83%D0%B1%D0%B5%D1%80%D0%BD%D1%81%D0%BA%D0%B0%D1%8F%20%D0%BF%D0%BB%D0%BE%D1%89%D0%B0%D0%B4%D1%8C%2C%20%D0%BF%D0%BB%D0%BE%D1%89%D0%B0%D0%B4%D1%8C%20%D0%9B%D0%B5%D0%BD%D0%B8%D0%BD%D0%B0%2C%208%D0%91%2C%20%D1%86%D0%BE%D0%BA%D0%BE%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9%20%D1%8D%D1%82%D0%B0%D0%B6%2C%20394006%2C%20%D0%92%D0%BE%D1%80%D0%BE%D0%BD%D0%B5%D0%B6%2C%20%D0%A6%D0%B5%D0%BD%D1%82%D1%80%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9%20%D1%80%D0%B0%D0%B9%D0%BE%D0%BD" rel="noopener">Открыть в 2ГИС</a></p></div>
+  </div>
+  
+</footer>
+</body>
+</html>
